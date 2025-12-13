@@ -1,9 +1,21 @@
-import os
-
-from dotenv import load_dotenv
-load_dotenv(override=True)
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+class Settings(BaseSettings):
+    TELEGRAM_BOT_TOKEN: str
+
+    GOOGLE_SERVICE_ACCOUNT_JSON: str
+    GOOGLE_SHEETS_SPREADSHEET_ID: str
+
+    DEEPSEEK_API_KEY: str
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    USE_MOCK_LLM: bool = True
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
+settings = Settings()
+
