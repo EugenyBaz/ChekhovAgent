@@ -1,6 +1,5 @@
 import asyncio
 import logging
-
 from app.bot import bot, dp
 
 logging.basicConfig(
@@ -8,8 +7,10 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
-
-async def main():
+async def main() -> None:
+    """ Точка входа приложения.
+        Запускает long polling Telegram-бота и начинает
+        обработку входящих обновлений."""
     await dp.start_polling(bot)
 
 

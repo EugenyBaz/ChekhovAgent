@@ -1,14 +1,16 @@
 import os
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    TELEGRAM_BOT_TOKEN: str
+    """ Конфигурация приложения.
+        Значения загружаются из переменных окружения и файла `.env`.
+        Используется Pydantic BaseSettings для автоматической валидации
+        и приведения типов."""
 
+    TELEGRAM_BOT_TOKEN: str
     GOOGLE_SERVICE_ACCOUNT_JSON: str
     GOOGLE_SHEETS_SPREADSHEET_ID: str
-
     DEEPSEEK_API_KEY: str
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
     USE_MOCK_LLM: bool = os.getenv("USE_MOCK_LLM", "True").lower() in (

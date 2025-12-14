@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class LLMService:
     """LLM сервис на базе DeepSeek"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Инициализация клиента DeepSeek через OpenAI SDK
         self.client = OpenAI(
             api_key=settings.DEEPSEEK_API_KEY,

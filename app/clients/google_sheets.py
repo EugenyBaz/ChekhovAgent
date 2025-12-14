@@ -1,16 +1,14 @@
 import logging
 from typing import Optional
-
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 
 class GoogleSheetsClient:
-    def __init__(self, spreadsheet_id: str):
+    def __init__(self, spreadsheet_id: str) -> None:
         """Конфигурация и инициализация клиента Google Sheets API"""
         self.spreadsheet_id = spreadsheet_id
 
@@ -27,9 +25,7 @@ class GoogleSheetsClient:
         query: str,
         sheet_name: str = "all_departments",
     ) -> Optional[dict]:
-        """
-        Ищем строку, где Name содержит query (case-insensitive)
-        """
+        """ Ищем строку, где Name содержит query """
         try:
             logger.info("Получение данных из Google Sheets")
 
@@ -59,11 +55,11 @@ class GoogleSheetsClient:
 
                 if name in query_lower:
                     logger.info(
-                        "Найден соответствующий департамент: %s", row_dict.get("Name")
+                        "Найден соответствующий клуб: %s", row_dict.get("Name")
                     )
                     return row_dict
 
-            logger.info("Не найден соответсвующий департамент по запросу: %s", query)
+            logger.info("Не найден соответсвующий клуб по запросу: %s", query)
             return None
 
         except Exception:
