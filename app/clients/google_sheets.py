@@ -57,7 +57,7 @@ class GoogleSheetsClient:
                 row_dict = dict(zip(headers, row))
                 name = row_dict.get("Name", "").lower()
 
-                if query_lower in name:
+                if name in query_lower:
                     logger.info("Найден соответствующий департамент: %s", row_dict.get("Name"))
                     return row_dict
 
