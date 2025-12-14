@@ -36,4 +36,5 @@ async def test_generate_response_not_found():
         "app.clients.google_sheets.sheets_client.find_department",
         new=AsyncMock(return_value=None),
     ):
-        await llm_service.generate_response("НеСуществующийКлуб")
+        response = await llm_service.generate_response("НеСуществующийКлуб")
+        assert response == "Не нашёл такую запись в таблице. Попробуйте уточнить запрос."
