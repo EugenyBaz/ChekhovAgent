@@ -37,4 +37,6 @@ async def test_generate_response_not_found():
         new=AsyncMock(return_value=None),
     ):
         response = await llm_service.generate_response("НеСуществующийКлуб")
-        assert response == "Не нашёл такую запись в таблице. Попробуйте уточнить запрос."
+        assert (
+            response == "Не нашёл такую запись в таблице. Попробуйте уточнить запрос."
+        )

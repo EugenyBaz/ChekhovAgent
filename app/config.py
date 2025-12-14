@@ -1,12 +1,13 @@
 import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """ Конфигурация приложения.
-        Значения загружаются из переменных окружения и файла `.env`.
-        Используется Pydantic BaseSettings для автоматической валидации
-        и приведения типов."""
+    """Конфигурация приложения.
+    Значения загружаются из переменных окружения и файла `.env`.
+    Используется Pydantic BaseSettings для автоматической валидации
+    и приведения типов."""
 
     TELEGRAM_BOT_TOKEN: str
     GOOGLE_SERVICE_ACCOUNT_JSON: str

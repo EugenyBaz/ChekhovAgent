@@ -1,7 +1,9 @@
 import logging
 from typing import Optional
+
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -25,7 +27,7 @@ class GoogleSheetsClient:
         query: str,
         sheet_name: str = "all_departments",
     ) -> Optional[dict]:
-        """ Ищем строку, где Name содержит query """
+        """Ищем строку, где Name содержит query"""
         try:
             logger.info("Получение данных из Google Sheets")
 
@@ -54,9 +56,7 @@ class GoogleSheetsClient:
                 name = row_dict.get("Name", "").lower()
 
                 if name in query_lower:
-                    logger.info(
-                        "Найден соответствующий клуб: %s", row_dict.get("Name")
-                    )
+                    logger.info("Найден соответствующий клуб: %s", row_dict.get("Name"))
                     return row_dict
 
             logger.info("Не найден соответсвующий клуб по запросу: %s", query)
