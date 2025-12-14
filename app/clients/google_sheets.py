@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class GoogleSheetsClient:
     def __init__(self, spreadsheet_id: str):
-        """ Конфигурация и инициализация клиента Google Sheets API """
+        """Конфигурация и инициализация клиента Google Sheets API"""
         self.spreadsheet_id = spreadsheet_id
 
         credentials = Credentials.from_service_account_file(
@@ -58,14 +58,17 @@ class GoogleSheetsClient:
                 name = row_dict.get("Name", "").lower()
 
                 if name in query_lower:
-                    logger.info("Найден соответствующий департамент: %s", row_dict.get("Name"))
+                    logger.info(
+                        "Найден соответствующий департамент: %s", row_dict.get("Name")
+                    )
                     return row_dict
 
             logger.info("Не найден соответсвующий департамент по запросу: %s", query)
             return None
 
-        except Exception as e:
+        except Exception:
             logger.exception("Ошибка чтения таблицы Google Sheets")
             return None
+
 
 sheets_client = GoogleSheetsClient(spreadsheet_id=settings.GOOGLE_SHEETS_SPREADSHEET_ID)

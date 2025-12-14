@@ -1,9 +1,12 @@
 import logging
+
 from openai import OpenAI
+
 from app.clients.google_sheets import sheets_client
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
 
 class LLMService:
     """LLM сервис на базе DeepSeek"""
@@ -12,7 +15,7 @@ class LLMService:
         # Инициализация клиента DeepSeek через OpenAI SDK
         self.client = OpenAI(
             api_key=settings.DEEPSEEK_API_KEY,
-            base_url=settings.DEEPSEEK_BASE_URL  # обычно https://api.deepseek.com
+            base_url=settings.DEEPSEEK_BASE_URL,  # обычно https://api.deepseek.com
         )
 
     async def generate_response(self, query: str) -> str:
@@ -41,9 +44,9 @@ class LLMService:
                 model="deepseek-chat",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
-                stream=False
+                stream=False,
             )
 
             answer = response.choices[0].message.content.strip()
@@ -53,5 +56,3 @@ class LLMService:
         except Exception:
             logger.exception("Ошибка при обращении к DeepSeek API")
             return "Ошибка при формировании ответа. Попробуйте позже."
-
-

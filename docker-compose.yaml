@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  chekhovagent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chekhovagent
+    env_file:
+      - .env
+    environment:
+      # Можно здесь переопределить переменные, если нужно
+      # TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      # DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    volumes:
+      - .:/app  # Монтируем проект для локальной разработки
+    command: python -m app.main

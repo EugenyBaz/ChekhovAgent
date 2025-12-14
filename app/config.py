@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str
@@ -9,7 +11,11 @@ class Settings(BaseSettings):
 
     DEEPSEEK_API_KEY: str
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
-    USE_MOCK_LLM: bool = os.getenv("USE_MOCK_LLM", "True").lower() in ("1", "true", "yes")
+    USE_MOCK_LLM: bool = os.getenv("USE_MOCK_LLM", "True").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -18,4 +24,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

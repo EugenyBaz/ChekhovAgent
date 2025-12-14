@@ -1,7 +1,9 @@
 import logging
+
 from app.clients.google_sheets import sheets_client
 
 logger = logging.getLogger(__name__)
+
 
 class LLMServiceMock:
     """Мок LLM-сервиса для тестирования без реального API"""
