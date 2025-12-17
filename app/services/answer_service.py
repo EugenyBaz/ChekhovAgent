@@ -1,61 +1,102 @@
 import logging
-
-from openai import OpenAI
+from enum import Enum
+from typing import Optional, List
 
 from app.clients.google_sheets import sheets_client
 from app.config import settings
+from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
+# ------------------- Состояния диалога -------------------
+class DialogState(str, Enum):
+    NEED_CLUB = "NEED_CLUB"
+    NEED_TIME = "NEED_TIME"
+    PRICING = "PRICING"
+    CLOSING = "CLOSING"
 
+# ------------------- Сервис LLM -------------------
 class LLMService:
-    """LLM сервис на базе DeepSeek"""
+    """Сервис для обработки запросов пользователя и генерации ответов с контекстом диалога"""
 
     def __init__(self) -> None:
-        # Инициализация клиента DeepSeek через OpenAI SDK
         self.client = OpenAI(
             api_key=settings.DEEPSEEK_API_KEY,
-            base_url=settings.DEEPSEEK_BASE_URL,  # обычно https://api.deepseek.com
+            base_url=settings.DEEPSEEK_BASE_URL,
         )
+        # Хранение состояния пользователей и истории сообщений
+        self.user_states = {}
 
-    async def generate_response(self, query: str) -> str:
-        """
-        Берём запрос пользователя, ищем данные в Google Sheets и формируем текст через DeepSeek
-        """
-        # Получаем данные из Google Sheets
-        department = await sheets_client.find_department(query)
+    # ------------------- Добавление сообщения в историю -------------------
+    def add_to_history(self, user_id: int, role: str, content: str):
+        history: List[dict] = self.user_states.setdefault(user_id, {}).setdefault("history", [])
+        history.append({"role": role, "content": content})
+        # Ограничиваем историю последними 6 сообщениями
+        if len(history) > 6:
+            history.pop(0)
 
-        if not department:
-            return "Не нашёл такую запись в таблице. Попробуйте уточнить запрос."
+    # ------------------- Генерация ответа -------------------
+    async def generate_response(self, user_id: int, user_text: str) -> str:
+        # Инициализация state пользователя
+        state_data = self.user_states.setdefault(user_id, {
+            "state": DialogState.NEED_CLUB,
+            "club": None,
+            "time_preference": None,
+            "greeted": False,
+            "history": []
+        })
 
-        # Формируем "промпт" для LLM
-        prompt = (
-            f"Пользователь спрашивает о {query}. Вот данные из таблицы:\n"
-            f"Название: {department.get('Name')}\n"
-            f"Телефон: {department.get('phone')}\n"
-            f"Адрес: {department.get('address')}\n"
-            f"Заметки: {department.get('Notes')}\n\n"
-            f" Ответ начинается со слов - Вот информация о клубе {query}"
-            f"Ты — информационный ассистент.Используй тольк факты, полученные из таблицы."
-            f"НЕ добавляй выводы, оценки или рекомендации."
-            f"НЕ используй маркетинговые формулировки.Составь короткий, понятный и дружелюбный ответ для пользователя."
-        )
+        # ------------------- Сохраняем пользовательское сообщение -------------------
+        self.add_to_history(user_id, "user", user_text)
+
+        # ------------------- Получаем данные для контекста -------------------
+        districts = await sheets_client.list_available_districts() or []
+        cities = ["г. Самарканд", "г. Бухара"]  # явные города, которых нет в district
+        departments = await sheets_client.get_all_departments()  # список всех клубов, чтобы дать LLM
+
+        # ------------------- Формируем промпт -------------------
+        prompt = f"""
+Вы — информационный ассистент фитнес-клубов Chekhov Sport Club, женщина по имени Малика.
+
+Контекст пользователя:
+- Состояние диалога: {state_data['state']}
+- История последних сообщений:
+{''.join([f"{m['role'].capitalize()}: {m['content']}\n" for m in state_data['history']])}
+
+Доступные клубы и районы:
+- Районы Ташкента: {', '.join(districts)}
+- Города: {', '.join(cities)}
+- Все клубы: {', '.join([d.get('Name', '') for d in departments])}
+
+Задача:
+1. Определить, что хочет пользователь: район, город, клуб или помощь с выбором.
+2. Если пользователь просто здоровается или пишет общие фразы, **не повторяй приветствие**, а веди разговор дальше: предложи варианты клубов или помощь с выбором.
+3. Если есть совпадение по клубу/району/городу — предложи следующий шаг: выбор времени тренировок, подбор абонемента или запись на презентацию.
+4. Ответ дружелюбный, информативный, без выдуманных данных.
+5. Если не понятно, предложи пользователю **список доступных вариантов** (районы, города, клубы).
+6. Никогда не дублируй, что ты Малика; это уже известно пользователю.
+7. Ограничь длину ответа 5-6 предложениями, чтобы диалог оставался живым и удобочитаемым.
+"""
 
         try:
-            # Вызываем DeepSeek через OpenAI SDK
+            # ------------------- Вызов LLM -------------------
             response = self.client.chat.completions.create(
                 model="deepseek-chat",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
+                    {"role": "system", "content": "Вы информационный ассистент Chekhov Sport Club."},
+                    {"role": "user", "content": prompt}
                 ],
                 stream=False,
             )
 
             answer = response.choices[0].message.content.strip()
             logger.info("Ответ от DeepSeek успешно получен")
+
+            # ------------------- Сохраняем ответ бота в историю -------------------
+            self.add_to_history(user_id, "assistant", answer)
+
             return answer
 
-        except Exception:
-            logger.exception("Ошибка при обращении к DeepSeek API")
-            return "Ошибка при формировании ответа. Попробуйте позже."
+        except Exception as e:
+            logger.exception("Ошибка при обращении к DeepSeek API: %s", e)
+            return "Извините, произошла ошибка при обработке вашего запроса. Попробуйте позже."
