@@ -61,4 +61,3 @@ async def text_handler(message: types.Message) -> None:
         await message.answer(
             "Извините, произошла ошибка при обработке вашего запроса. Попробуйте позже."
         )
-

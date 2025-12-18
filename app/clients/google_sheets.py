@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
@@ -20,7 +21,9 @@ class GoogleSheetsClient:
         service = build("sheets", "v4", credentials=credentials)
         self.sheet = service.spreadsheets()
 
-    async def _load_departments(self, sheet_name: str = "all_departments") -> list[dict]:
+    async def _load_departments(
+        self, sheet_name: str = "all_departments"
+    ) -> list[dict]:
         """Загружает все отделения из Google Sheets"""
         try:
             result = (
@@ -43,7 +46,9 @@ class GoogleSheetsClient:
             logger.exception("Ошибка чтения Google Sheets")
             return []
 
-    async def get_all_departments(self, sheet_name: str = "all_departments") -> list[dict]:
+    async def get_all_departments(
+        self, sheet_name: str = "all_departments"
+    ) -> list[dict]:
         """Возвращает все клубы"""
         return await self._load_departments(sheet_name)
 
@@ -66,7 +71,9 @@ class GoogleSheetsClient:
         logger.info("Клуб не найден по запросу: %s", query)
         return None
 
-    async def list_available_districts(self, sheet_name: str = "all_departments") -> list[str]:
+    async def list_available_districts(
+        self, sheet_name: str = "all_departments"
+    ) -> list[str]:
         """Возвращает уникальные районы Ташкента"""
         departments = await self._load_departments(sheet_name)
 
@@ -82,7 +89,9 @@ class GoogleSheetsClient:
 
         return sorted(districts)
 
-    async def list_available_cities(self, sheet_name: str = "all_departments") -> list[str]:
+    async def list_available_cities(
+        self, sheet_name: str = "all_departments"
+    ) -> list[str]:
         """Возвращает уникальные города (кроме Ташкента)"""
         departments = await self._load_departments(sheet_name)
 
@@ -101,7 +110,4 @@ class GoogleSheetsClient:
 
 
 # Инициализация клиента
-sheets_client = GoogleSheetsClient(
-    spreadsheet_id=settings.GOOGLE_SHEETS_SPREADSHEET_ID
-)
-
+sheets_client = GoogleSheetsClient(spreadsheet_id=settings.GOOGLE_SHEETS_SPREADSHEET_ID)

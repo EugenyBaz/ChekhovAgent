@@ -7,12 +7,21 @@ from openai import OpenAI
 from app.clients.google_sheets import sheets_client
 from app.clients.group_classes import group_classes_client
 from app.config import settings
-from app.services.intent_detector import TrainingIntentDetector, TrainingIntent, TrainingIntentResult
+from app.services.intent_detector import (
+    TrainingIntent,
+    TrainingIntentDetector,
+    TrainingIntentResult,
+)
 
 logger = logging.getLogger(__name__)
 
+
 # ------------------- Состояния диалога -------------------
 class DialogState(str, Enum):
+    """
+    Возможные состояния диалога с пользователем.
+    """
+
     NEED_CLUB = "NEED_CLUB"
     NEED_TIME = "NEED_TIME"
     PRICING = "PRICING"
@@ -21,6 +30,12 @@ class DialogState(str, Enum):
 
 # ------------------- Сервис LLM -------------------
 class LLMService:
+    """
+    Сервис для генерации ответов на основе LLM (DeepSeek / OpenAI).
+
+    Сохраняет состояние диалога с пользователями и историю сообщений.
+    """
+
     def __init__(self) -> None:
         self.client = OpenAI(
             api_key=settings.DEEPSEEK_API_KEY,
@@ -29,14 +44,23 @@ class LLMService:
         self.user_states = {}
 
     # ------------------- История -------------------
-    def add_to_history(self, user_id: int, role: str, content: str):
-        history: List[dict] = self.user_states.setdefault(user_id, {}).setdefault("history", [])
+    def add_to_history(self, user_id: int, role: str, content: str) -> None:
+        """
+        Добавляет сообщение в историю диалога пользователя.
+        Ограничивает историю последними 6 сообщениями."""
+
+        history: List[dict] = self.user_states.setdefault(user_id, {}).setdefault(
+            "history", []
+        )
         history.append({"role": role, "content": content})
         if len(history) > 6:
             history.pop(0)
 
     # ------------------- Генерация ответа -------------------
     async def generate_response(self, user_id: int, user_text: str) -> str:
+        """Генерирует ответ пользователю на основе LLM с учетом состояния диалога,
+        интента и фактов о клубах и тренировках."""
+
         state_data = self.user_states.setdefault(
             user_id,
             {
@@ -57,7 +81,7 @@ class LLMService:
         for d in departments:
             for key in ["Name", "address", "phone"]:
                 if d.get(key):
-                    d[key] = d[key].replace('"', '').replace('\n', ' ').strip()
+                    d[key] = d[key].replace('"', "").replace("\n", " ").strip()
 
         club_names = [d.get("Name") for d in departments if d.get("Name")]
 
@@ -75,12 +99,25 @@ class LLMService:
 
         # поиск клуба по неполному совпадению (fallback)
         matched_club_info = None
-        if entity and intent in [TrainingIntent.CLASSES_BY_CLUB, TrainingIntent.CLUBS_BY_CLASS]:
+        if entity and intent in [
+            TrainingIntent.CLASSES_BY_CLUB,
+            TrainingIntent.CLUBS_BY_CLASS,
+        ]:
             # ищем точное совпадение
-            matched_club_info = next((d for d in departments if d.get("Name").lower() == entity.lower()), None)
+            matched_club_info = next(
+                (d for d in departments if d.get("Name").lower() == entity.lower()),
+                None,
+            )
             # если точного нет, ищем частичное совпадение
             if not matched_club_info:
-                matched_club_info = next((d for d in departments if entity.lower() in d.get("Name", "").lower()), None)
+                matched_club_info = next(
+                    (
+                        d
+                        for d in departments
+                        if entity.lower() in d.get("Name", "").lower()
+                    ),
+                    None,
+                )
             if matched_club_info:
                 entity = matched_club_info.get("Name")  # обновляем entity на точное имя
 
@@ -100,8 +137,16 @@ class LLMService:
 
         elif intent == TrainingIntent.CLASSES_BY_CLUB and entity:
             classes = await group_classes_client.get_classes_by_club(entity)
-            address = matched_club_info.get("address", "Нет данных") if matched_club_info else "Нет данных"
-            phone = matched_club_info.get("phone", "Нет данных") if matched_club_info else "Нет данных"
+            address = (
+                matched_club_info.get("address", "Нет данных")
+                if matched_club_info
+                else "Нет данных"
+            )
+            phone = (
+                matched_club_info.get("phone", "Нет данных")
+                if matched_club_info
+                else "Нет данных"
+            )
             facts_block = (
                 f"Клуб: {entity}\nАдрес: {address}\nТелефон: {phone}\n"
                 f"Доступные тренировки: {', '.join(classes) if classes else 'Нет данных'}"
@@ -152,7 +197,10 @@ class LLMService:
             response = self.client.chat.completions.create(
                 model="deepseek-chat",
                 messages=[
-                    {"role": "system", "content": "Вы информационный ассистент Chekhov Sport Club."},
+                    {
+                        "role": "system",
+                        "content": "Вы информационный ассистент Chekhov Sport Club.",
+                    },
                     {"role": "user", "content": prompt},
                 ],
                 stream=False,

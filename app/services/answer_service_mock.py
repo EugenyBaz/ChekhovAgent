@@ -3,9 +3,10 @@ from typing import List
 
 from app.clients.google_sheets import sheets_client
 from app.clients.group_classes import group_classes_client
-from app.services.intent_detector import TrainingIntentDetector, TrainingIntent
+from app.services.intent_detector import TrainingIntent, TrainingIntentDetector
 
 logger = logging.getLogger(__name__)
+
 
 class LLMServiceMock:
     """Мок LLM-сервиса для тестирования без реального API, совместим с новой логикой интентов"""
@@ -14,7 +15,9 @@ class LLMServiceMock:
         self.user_states = {}
 
     def add_to_history(self, user_id: int, role: str, content: str):
-        history: List[dict] = self.user_states.setdefault(user_id, {}).setdefault("history", [])
+        history: List[dict] = self.user_states.setdefault(user_id, {}).setdefault(
+            "history", []
+        )
         history.append({"role": role, "content": content})
         if len(history) > 6:
             history.pop(0)
@@ -23,7 +26,13 @@ class LLMServiceMock:
         # инициализация состояния пользователя
         state_data = self.user_states.setdefault(
             user_id,
-            {"state": "NEED_CLUB", "club": None, "time_preference": None, "greeted": False, "history": []},
+            {
+                "state": "NEED_CLUB",
+                "club": None,
+                "time_preference": None,
+                "greeted": False,
+                "history": [],
+            },
         )
 
         self.add_to_history(user_id, "user", user_text)
@@ -52,7 +61,9 @@ class LLMServiceMock:
                     address = club_info.get("address", "Нет данных")
                     phone = club_info.get("phone", "Нет данных")
                     info.append(f"{c} (Адрес: {address}, Телефон: {phone})")
-                response = f"[MOCK] Тренировка '{entity}' доступна в клубах: {', '.join(info)}"
+                response = (
+                    f"[MOCK] Тренировка '{entity}' доступна в клубах: {', '.join(info)}"
+                )
             else:
                 response = f"[MOCK] Нет клубов с тренировкой '{entity}'"
 
