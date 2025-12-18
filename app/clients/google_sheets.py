@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 class GoogleSheetsClient:
     def __init__(self, spreadsheet_id: str) -> None:
-        """Конфигурация и инициализация клиента Google Sheets API"""
         self.spreadsheet_id = spreadsheet_id
 
         credentials = Credentials.from_service_account_file(
@@ -19,52 +18,96 @@ class GoogleSheetsClient:
             scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
         )
 
-        self.service = build("sheets", "v4", credentials=credentials)
-        self.sheet = self.service.spreadsheets()
+        service = build("sheets", "v4", credentials=credentials)
+        self.sheet = service.spreadsheets()
+
+    async def _load_departments(
+        self, sheet_name: str = "all_departments"
+    ) -> list[dict]:
+        """Загружает все отделения из Google Sheets"""
+        try:
+            result = (
+                self.sheet.values()
+                .get(spreadsheetId=self.spreadsheet_id, range=sheet_name)
+                .execute()
+            )
+
+            values = result.get("values", [])
+            if not values:
+                logger.warning("Google Sheets вернул пустые данные")
+                return []
+
+            headers = values[0]
+            rows = values[1:]
+
+            return [dict(zip(headers, row)) for row in rows]
+
+        except Exception:
+            logger.exception("Ошибка чтения Google Sheets")
+            return []
+
+    async def get_all_departments(
+        self, sheet_name: str = "all_departments"
+    ) -> list[dict]:
+        """Возвращает все клубы"""
+        return await self._load_departments(sheet_name)
 
     async def find_department(
         self,
         query: str,
         sheet_name: str = "all_departments",
     ) -> Optional[dict]:
-        """Ищем строку, где Name содержит query"""
-        try:
-            logger.info("Получение данных из Google Sheets")
+        """Ищет клуб по вхождению Name в query"""
+        departments = await self._load_departments(sheet_name)
 
-            result = (
-                self.sheet.values()
-                .get(
-                    spreadsheetId=self.spreadsheet_id,
-                    range=sheet_name,
-                )
-                .execute()
-            )
+        query_lower = query.lower()
 
-            values = result.get("values", [])
+        for department in departments:
+            name = department.get("Name", "").lower()
+            if name and name in query_lower:
+                logger.info("Найден соответствующий клуб: %s", department.get("Name"))
+                return department
 
-            if not values:
-                logger.warning("Google Sheets вернул пустые данные")
-                return None
+        logger.info("Клуб не найден по запросу: %s", query)
+        return None
 
-            headers = values[0]
-            rows = values[1:]
+    async def list_available_districts(
+        self, sheet_name: str = "all_departments"
+    ) -> list[str]:
+        """Возвращает уникальные районы Ташкента"""
+        departments = await self._load_departments(sheet_name)
 
-            query_lower = query.lower()
+        districts = set()
 
-            for row in rows:
-                row_dict = dict(zip(headers, row))
-                name = row_dict.get("Name", "").lower()
+        for dep in departments:
+            cell = dep.get("district")
+            if not cell:
+                continue
 
-                if name in query_lower:
-                    logger.info("Найден соответствующий клуб: %s", row_dict.get("Name"))
-                    return row_dict
+            parts = [p.strip().split("(")[0].strip() for p in cell.split("+")]
+            districts.update(parts)
 
-            logger.info("Не найден соответсвующий клуб по запросу: %s", query)
-            return None
+        return sorted(districts)
 
-        except Exception:
-            logger.exception("Ошибка чтения таблицы Google Sheets")
-            return None
+    async def list_available_cities(
+        self, sheet_name: str = "all_departments"
+    ) -> list[str]:
+        """Возвращает уникальные города (кроме Ташкента)"""
+        departments = await self._load_departments(sheet_name)
+
+        cities = set()
+
+        for dep in departments:
+            address = dep.get("address")
+            if not address:
+                continue
+
+            city = address.split(",")[-1].strip()
+            if city.lower() != "ташкент":
+                cities.add(city)
+
+        return sorted(cities)
 
 
+# Инициализация клиента
 sheets_client = GoogleSheetsClient(spreadsheet_id=settings.GOOGLE_SHEETS_SPREADSHEET_ID)
