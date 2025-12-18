@@ -3,12 +3,17 @@ import logging
 from aiogram import Router, types
 from aiogram.filters import CommandStart
 
+from app.config import settings
 from app.services.answer_service import LLMService
+from app.services.answer_service_mock import LLMServiceMock
 
 logger = logging.getLogger(__name__)
 
 router = Router()
-llm_service = LLMService()
+if settings.USE_MOCK_LLM:
+    llm_service = LLMServiceMock()
+else:
+    llm_service = LLMService()
 
 
 # ------------------- Обработчик /start -------------------
