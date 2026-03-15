@@ -67,10 +67,10 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_KEY }}
 
-      - name: Deploy
+      - name: Deploy to server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            cd ~/chekhovagent
-            docker compose pull
-            docker compose up -d --remove-orphans
-          EOF
+          ssh -o StrictHostKeyChecking=no \
+              -o ServerAliveInterval=30 \
+              -o ServerAliveCountMax=10 \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} \
+              "cd ~/chekhovagent && docker compose pull && docker compose up -d --remove-orphans"
