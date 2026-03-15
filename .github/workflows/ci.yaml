@@ -63,9 +63,12 @@ jobs:
 
     steps:
       - name: Deploy to server
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Pull & restart
-        run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ~/chekhovagent && docker compose pull && docker compose up -d --remove-orphans"
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/chekhovagent
+            docker compose pull
+            docker compose up -d --remove-orphans
