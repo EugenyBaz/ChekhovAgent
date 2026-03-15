@@ -73,9 +73,4 @@ jobs:
         run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} 'bash -s' << 'EOF'
-          cd ~/chekhovagent
-          docker compose pull
-          docker compose up -d --remove-orphans
-          EOF
+      - run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ~/chekhovagent && docker compose pull && docker compose up -d --remove-orphans"
