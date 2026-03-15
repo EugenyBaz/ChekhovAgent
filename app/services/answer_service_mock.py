@@ -24,7 +24,7 @@ class LLMServiceMock:
 
     async def generate_response(self, user_id: int, user_text: str) -> str:
         # инициализация состояния пользователя
-        state_data = self.user_states.setdefault(
+        self.user_states.setdefault(
             user_id,
             {
                 "state": "NEED_CLUB",
