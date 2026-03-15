@@ -1,23 +1,25 @@
-# Используем официальный Python образ
 FROM python:3.12-slim
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем только файлы с зависимостями
+ENV PYTHONUNBUFFERED=1
+
+# системные пакеты
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# копируем зависимости
 COPY pyproject.toml poetry.lock* /app/
 
-# Устанавливаем Poetry и зависимости
+# устанавливаем poetry и зависимости
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-root
+    poetry install --no-root --only main
 
-# Копируем остальной код проекта
+# копируем код
 COPY . /app/
 
-# Экспортируем переменные окружения
-# ENV TELEGRAM_BOT_TOKEN=...
-# ENV DEEPSEEK_API_KEY=...
-
-# Команда запуска бота
+# запуск бота
 CMD ["python", "-m", "app.main"]
