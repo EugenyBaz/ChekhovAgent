@@ -7,11 +7,9 @@ from openai import OpenAI
 from app.clients.google_sheets import sheets_client
 from app.clients.group_classes import group_classes_client
 from app.config import settings
-from app.services.intent_detector import (
-    TrainingIntent,
-    TrainingIntentDetector,
-    TrainingIntentResult,
-)
+from app.services.intent_detector import (TrainingIntent,
+                                          TrainingIntentDetector,
+                                          TrainingIntentResult)
 
 logger = logging.getLogger(__name__)
 
