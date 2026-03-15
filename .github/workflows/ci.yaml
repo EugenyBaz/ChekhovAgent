@@ -69,9 +69,4 @@ jobs:
 
       - name: Pull & restart
         run: |
-          ssh -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            cd ~/chekhovagent
-            docker compose pull
-            docker compose up -d --remove-orphans
-          EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd ~/chekhovagent && docker compose pull && docker compose up -d --remove-orphans"
