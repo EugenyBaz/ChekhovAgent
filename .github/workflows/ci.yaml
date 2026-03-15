@@ -62,18 +62,12 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Create SSH key
-        run: |
-          mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
-          key_path: ~/.ssh/deploy_key
+          key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/chekhovagent
             docker compose pull
